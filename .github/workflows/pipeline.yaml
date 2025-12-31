@@ -74,7 +74,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & push backend image
-        working-directory: ./application/backend
+        working-directory: application/backend
         run: |
           docker build -t $ECR_BACKEND_REPO:${IMAGE_TAG} application/backend
           docker tag $ECR_BACKEND_REPO:${IMAGE_TAG} \
@@ -82,7 +82,7 @@ jobs:
           docker push ${{ steps.ecr.outputs.registry }}/$ECR_BACKEND_REPO:${IMAGE_TAG}
 
       - name: Build & push frontend image
-        working-directory: ./application/frontend
+        working-directory: application/frontend
         run: |
           docker build -t $ECR_FRONTEND_REPO:${IMAGE_TAG} application/frontend
           docker tag $ECR_FRONTEND_REPO:${IMAGE_TAG} \
