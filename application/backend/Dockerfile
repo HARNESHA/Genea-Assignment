@@ -22,9 +22,9 @@ ENV PATH="/root/.local/bin:$PATH"
 COPY backend/pyproject.toml backend/poetry.lock* ./
 RUN poetry install --no-root
 
-COPY backend/alembic.ini ./alembic.ini
-COPY backend/app ./app
-COPY backend/prestart.sh ./prestart.sh
+COPY alembic.ini ./alembic.ini
+COPY app ./app
+COPY prestart.sh ./prestart.sh
 
 # Fix Windows line endings
 RUN sed -i 's/\r$//' ./prestart.sh && chmod +x ./prestart.sh
