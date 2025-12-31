@@ -18,7 +18,6 @@ jobs:
   ci-cd:
     name: ci-cd-pipeline
     runs-on: ubuntu-latest
-    needs: pre-build
     permissions:
       id-token: write
       contents: read
