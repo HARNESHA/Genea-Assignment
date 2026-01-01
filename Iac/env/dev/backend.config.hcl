@@ -1,3 +1,3 @@
-bucket = "particle41-eks"
-key    = "particle41-eks/terraform.tfstate"
+bucket = "particle-eks"
+key    = "particle-eks/terraform.tfstate"
 region = "us-east-1"
