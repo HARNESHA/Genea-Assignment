@@ -23,6 +23,7 @@ env:
 
 jobs:
   rollback:
+    name: Rollback
     runs-on: ubuntu-latest
     permissions:
       id-token: write
