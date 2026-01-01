@@ -7,11 +7,14 @@ on:
         description: "Component to rollback (backend | frontend | all)"
         required: true
         default: "all"
+        type: choice
+        options:
+          - backend
+          - frontend
+          - all
       revision:
-        description: "Kubernetes revision number (optional)"
+        description: "Kubernetes revision (optional)"
         required: false
-  push:
-
 env:
   AWS_REGION: ap-south-1
   EKS_CLUSTER_NAME: assignment-cluster
