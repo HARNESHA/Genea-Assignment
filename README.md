@@ -237,7 +237,7 @@ env:
   ECR_BACKEND_REPO: assignment-backend
   ECR_FRONTEND_REPO: assignment-frontend
   EKS_CLUSTER_NAME: assignment-cluster
-  VITE_API_URL: http://assignment-api.jay.cloud-ip.cc
+  VITE_API_URL: http://assignment-api.jay.cloud-ip
   IMAGE_TAG: ${{ github.sha }}
 ```
 ```
@@ -309,19 +309,91 @@ Once the Ingress is applied:
 * AWS automatically provisions an **Application Load Balancer**
 * ALB DNS name becomes available
 * Custom domain (optional) can be mapped via Route53
-<img width="1216" height="682" alt="image" src="https://github.com/user-attachments/assets/04a3a35a-09eb-460a-93e9-6e6b4b95600b" />
+<img width="1487" height="493" alt="image" src="https://github.com/user-attachments/assets/9f235506-3ec5-49a5-9cc4-a04bf840aed0" />
 
+### Database Migrations
 
-## 🧠 Key Takeaways
+* A migration represents a controlled change to the database schema (for example: adding a column, changing a datatype, or removing a table).
+* To demonstrate the migration process, **two visible schema changes** were implemented and applied to the database.
 
-| Area               | Implementation              |
-| ------------------ | --------------------------- |
-| Infra Provisioning | Terraform                   |
-| CI/CD Automation   | GitHub Actions              |
-| Container Registry | Amazon ECR                  |
-| Orchestration      | Amazon EKS                  |
-| Rollback Strategy  | Kubernetes Revision Control |
-| Security           | IAM + OIDC                  |
+#### Schema Change 1 – User Table
 
----
+A new optional field `phone_number` was added to the `user` table.
+
+**Model change (`app/models.py`):**
+
+```python
+class UserBase(SQLModel):
+    email: EmailStr = Field(unique=True, index=True, max_length=255)
+    is_active: bool = True
+    is_superuser: bool = False
+    full_name: str | None = Field(default=None, max_length=255)
+    phone_number: str | None = Field(default=None, max_length=20)
+```
+
+**Database effect:**
+
+```
+ALTER TABLE user ADD COLUMN phone_number VARCHAR(20);
+```
+
+#### Schema Change 2 – Item Table
+
+A new optional field `price` was added to the `item` table.
+
+**Model change (`app/models.py`):**
+
+```python
+class ItemBase(SQLModel):
+    title: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=255)
+    price: float | None = Field(default=None, ge=0)
+```
+
+**Database effect:**
+
+```
+ALTER TABLE item ADD COLUMN price FLOAT;
+```
+
+### Generating a Migration
+
+After updating the models, a migration file is auto-generated using Alembic:
+
+```bash
+alembic revision --autogenerate -m "add phone_number to user and price to item"
+```
+
+This creates a versioned migration file under:
+
+```
+alembic/versions/
+```
+
+The file contains both:
+
+* `upgrade()` – applies schema changes
+* `downgrade()` – reverts schema changes
+
+### Applying the Migration
+
+To apply the migration to the database:
+
+```bash
+alembic upgrade head
+```
+
+After applying, the new columns are visible in the database.
+<img width="1397" height="818" alt="Screenshot 2026-01-02 020325" src="https://github.com/user-attachments/assets/a2b4217d-d18c-4e58-a775-0c45de4cdedb" />
+<img width="903" height="737" alt="image" src="https://github.com/user-attachments/assets/cf2307ad-2c24-4150-a439-5b95e4124139" />
+
+### Rolling Back a Migration
+
+To rollback the last schema change:
+
+```bash
+alembic downgrade -1
+```
+
+This safely removes the newly added columns, proving rollback capability.
 
