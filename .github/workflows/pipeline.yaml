@@ -93,13 +93,15 @@ jobs:
       - name: Deploy Backend
         run: |
           kubectl set image deployment/fast-api-backend \
-            backend=${{ env.ECR_BACKEND_REPO }}:${{ github.sha }}
+            fast-api-backend=${{ env.ECR_BACKEND_REPO }}:${{ env.IMAGE_TAG }} \
+            --record
           kubectl rollout status deployment/fast-api-backend --timeout=30s
 
       - name: Deploy Frontend
         run: |
           kubectl set image deployment/fast-api-frontend \
-            frontend=${{ env.ECR_FRONTEND_REPO }}:${{ github.sha }}
+            fast-api-frontend=${{ env.ECR_FRONTEND_REPO }}:${{ env.IMAGE_TAG }} \
+            --record
           kubectl rollout status deployment/fast-api-frontend --timeout=30s
 
       - name: Verify Deployment
