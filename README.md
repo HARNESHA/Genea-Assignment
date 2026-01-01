@@ -1,6 +1,30 @@
 # Genea DevSecOps Assignment
 
-## 🚀 Terraform Deployment Guide (Dev Environment)
+## 📌 Architecture Overview
+
+**High-level flow**
+
+```
+Terraform (IaC)
+   │
+   ├── Provision AWS Infra (EKS, RDS, IAM, ECR)
+   │
+   ├── Export Infra Outputs
+   │
+   ├── CI Pipeline
+   │     ├── Build Docker Images
+   │     ├── Push to Amazon ECR
+   │
+   ├── CD Pipeline
+   │     ├── Update Kubernetes Deployments
+   │     ├── Trigger Rolling Updates
+   │
+   └── Rollback Workflow
+         ├── Rollback Backend / Frontend / All
+         └── Rollback to Specific Revision (Optional)
+```
+
+## 🚀 Provision AWS Infra 
 
 This repository provisions **AWS infrastructure using Terraform** with a **remote S3 backend** for secure and collaborative state management.
 
@@ -158,7 +182,7 @@ Terraform will:
 > * CI/CD pipelines
 > * Application deployment
 
-## ☸️ Step 5: Access EKS & Deploy Application
+## ☸️ Step 5: Access EKS
 
 Update kubeconfig:
 
@@ -166,29 +190,110 @@ Update kubeconfig:
 aws eks update-kubeconfig \
   --name <your-eks-cluster-name> \
   --region ap-south-1
-```
-
-Verify cluster access & deploy the application fron K8s folder manifest
-
-```bash
 kubectl cluster-info
-kubectl apply -f frontend-deployment.yaml
-kubectl apply -f backend-deployment.yaml
 ```
-<img width="1848" height="300" alt="image" src="https://github.com/user-attachments/assets/85ca55eb-0834-49f5-9eeb-4f4a848887ad" />
+<img width="1848" height="130" alt="image" src="https://github.com/user-attachments/assets/624147b5-bc63-41ff-a3c6-59779325a842" />
 
-## ♻️ Rollback, Updates & Cleanup
+## 🚀 CI/CD & Application Rollback Workflow (Automated)
 
-### 🔄 Infrastructure Changes
+After infrastructure deployment, take a notes of **Terraform outputs** to configure env in workflows.
 
-* Modify Terraform code
-* Re-run `terraform plan` and `terraform apply`
-* Terraform safely performs **incremental updates**
+### ⚙️ GitHub Actions – Configuration
 
-### 🧨 Destroy Infrastructure (If Required)
-
-```bash
-terraform destroy \
-  -var-file=../../vars/dev.terraform.tfvars
+* The following environment variables needs to be configured in both relative ci-cd workflow & rollback workflow to make automated deployment.
+* Make sure to add updated role from aws account to perform automated deployment with setting up [OIDC for github actions.](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws?versionId=free-pro-team%40latest&productId=apps)
+* The pipeline iam role should be mapped to the EKS cluster authentication layer.
+```
+env:
+  AWS_REGION: ap-south-1
+  ECR_REGISTRY: 935456168005.dkr.ecr.ap-south-1.amazonaws.com
+  ECR_BACKEND_REPO: assignment-backend
+  ECR_FRONTEND_REPO: assignment-frontend
+  EKS_CLUSTER_NAME: assignment-cluster
+  VITE_API_URL: http://assignment-api.jay.cloud-ip.cc
+  IMAGE_TAG: ${{ github.sha }}
+```
+```
+  - name: Configure AWS credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: arn:aws:iam::935456168005:role/GitHubAction-AssumeRoleWithAction
+      aws-region: ${{ env.AWS_REGION }}
 ```
 
+### CI-CD Pipeline (Automated)
+
+* Once the all env & workflow configuration is done click on the below links to trigger the workflows.
+* Manual trigger (workflow dispatch)
+* [CI-CD Pipeline workflow](https://github.com/HARNESHA/Genea-Assignment/actions/workflows/pipeline.yaml) 
+
+### 🧪 CI Phase – Image Lifecycle
+
+During CI execution:
+
+* Backend and frontend Docker images are built
+* Images are versioned using:
+
+  * Git commit SHA
+  * `latest` tag
+* Images are pushed to **Amazon ECR**
+
+### ☸️ CD Phase – Application Deployment
+
+After image build:
+
+* Kubernetes deployments are updated automatically
+* Rolling updates are triggered in EKS
+* Previous versions are retained as revisions
+
+
+### ♻️ Rollback Workflow (Controlled & Safe)
+
+* To deploy the application to specific version [**Rollback**](https://github.com/HARNESHA/Genea-Assignment/actions/workflows/rollback.yaml) workflow can be trigger mannual mode.
+* Select the requried input to rollback deployment to specific version.
+
+| Input       | Description                  |
+| ----------- | ---------------------------- |
+| `component` | backend / frontend / all     |
+| `revision`  | Optional Kubernetes revision |
+
+### 🔁 Supported Rollback Scenarios
+
+#### 🔹 Rollback to Previous Version
+
+* Automatically reverts the selected component
+* No revision input required
+
+#### 🔹 Rollback to Specific Version
+
+* Reverts to a known stable Kubernetes revision
+* Used for controlled recovery
+* Backend and frontend rolled back together
+* Ensures compatibility between services
+
+### Configure ALB Ingress
+
+Create an [Ingress resource](https://docs.aws.amazon.com/eks/latest/userguide/lbc-helm.html) configured for AWS ALB:
+
+#### Access the Application
+
+Once the Ingress is applied:
+
+* AWS automatically provisions an **Application Load Balancer**
+* ALB DNS name becomes available
+* Custom domain (optional) can be mapped via Route53
+<img width="1216" height="682" alt="image" src="https://github.com/user-attachments/assets/04a3a35a-09eb-460a-93e9-6e6b4b95600b" />
+
+
+## 🧠 Key Takeaways
+
+| Area               | Implementation              |
+| ------------------ | --------------------------- |
+| Infra Provisioning | Terraform                   |
+| CI/CD Automation   | GitHub Actions              |
+| Container Registry | Amazon ECR                  |
+| Orchestration      | Amazon EKS                  |
+| Rollback Strategy  | Kubernetes Revision Control |
+| Security           | IAM + OIDC                  |
+
+---
