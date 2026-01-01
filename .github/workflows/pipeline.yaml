@@ -11,6 +11,7 @@ env:
   ECR_BACKEND_REPO: assignment-backend
   ECR_FRONTEND_REPO: assignment-frontend
   EKS_CLUSTER_NAME: assignment-cluster
+  VITE_API_URL: http://assignment-api.jay.cloud-ip.cc
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -48,7 +49,7 @@ jobs:
         working-directory: application/frontend
         run: |
           docker build \
-            --build-arg VITE_API_URL=http://fast-api-backend-svc \
+            --build-arg VITE_API_URL=${VITE_API_URL} \
             -t $ECR_FRONTEND_REPO:${IMAGE_TAG} .
           docker tag $ECR_FRONTEND_REPO:${IMAGE_TAG} \
             ${{ steps.ecr.outputs.registry }}/$ECR_FRONTEND_REPO:${IMAGE_TAG}
