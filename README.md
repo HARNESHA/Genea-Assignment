@@ -1,6 +1,30 @@
 # Genea DevSecOps Assignment
 
-## 🚀 Terraform Deployment Guide (Dev Environment)
+## 📌 Architecture Overview
+
+**High-level flow**
+
+```
+Terraform (IaC)
+   │
+   ├── Provision AWS Infra (EKS, RDS, IAM, ECR)
+   │
+   ├── Export Infra Outputs
+   │
+   ├── CI Pipeline
+   │     ├── Build Docker Images
+   │     ├── Push to Amazon ECR
+   │
+   ├── CD Pipeline
+   │     ├── Update Kubernetes Deployments
+   │     ├── Trigger Rolling Updates
+   │
+   └── Rollback Workflow
+         ├── Rollback Backend / Frontend / All
+         └── Rollback to Specific Revision (Optional)
+```
+
+## 🚀 Provision AWS Infra 
 
 This repository provisions **AWS infrastructure using Terraform** with a **remote S3 backend** for secure and collaborative state management.
 
@@ -158,7 +182,7 @@ Terraform will:
 > * CI/CD pipelines
 > * Application deployment
 
-## ☸️ Step 5: Access EKS & Deploy Application
+## ☸️ Step 5: Access EKS & Create a Backed env Secrets
 
 Update kubeconfig:
 
@@ -166,29 +190,226 @@ Update kubeconfig:
 aws eks update-kubeconfig \
   --name <your-eks-cluster-name> \
   --region ap-south-1
-```
-
-Verify cluster access & deploy the application fron K8s folder manifest
-
-```bash
 kubectl cluster-info
-kubectl apply -f frontend-deployment.yaml
-kubectl apply -f backend-deployment.yaml
 ```
-<img width="1848" height="300" alt="image" src="https://github.com/user-attachments/assets/85ca55eb-0834-49f5-9eeb-4f4a848887ad" />
-
-## ♻️ Rollback, Updates & Cleanup
-
-### 🔄 Infrastructure Changes
-
-* Modify Terraform code
-* Re-run `terraform plan` and `terraform apply`
-* Terraform safely performs **incremental updates**
-
-### 🧨 Destroy Infrastructure (If Required)
+<img width="1848" height="130" alt="image" src="https://github.com/user-attachments/assets/624147b5-bc63-41ff-a3c6-59779325a842" />
 
 ```bash
-terraform destroy \
-  -var-file=../../vars/dev.terraform.tfvars
+kubectl create secret generic backend-secret \
+    --from-literal=DOMAIN=localhost \
+    --from-literal=ENVIRONMENT=local \
+    --from-literal=PROJECT_NAME="Full Stack FastAPI Project" \
+    --from-literal=STACK_NAME=full-stack-fastapi-project \
+    --from-literal=BACKEND_CORS_ORIGINS="http://localhost,http://localhost:5173,http://assignment.jay.cloud-ip" \
+    --from-literal=SECRET_KEY=harnesha2244 \
+    --from-literal=FIRST_SUPERUSER=harnesha22@gmail.com \
+    --from-literal=FIRST_SUPERUSER_PASSWORD=harnesha22 \
+    --from-literal=USERS_OPEN_REGISTRATION=True \
+    --from-literal=SMTP_HOST= \
+    --from-literal=SMTP_USER= \
+    --from-literal=SMTP_PASSWORD= \
+    --from-literal=EMAILS_FROM_EMAIL=info@example.com \
+    --from-literal=SMTP_TLS=True \
+    --from-literal=SMTP_SSL=False \
+    --from-literal=SMTP_PORT=587 \
+    --from-literal=POSTGRES_SERVER=database-1.xxx.ap-south-1.rds.amazonaws.com \
+    --from-literal=POSTGRES_PORT=5432 \
+    --from-literal=POSTGRES_DB=assignmentdevdb \
+    --from-literal=POSTGRES_USER=postgres \
+    --from-literal=POSTGRES_PASSWORD= \
+ --dry-run=client -o yaml > secret.yaml
+ kubectl apply -f secret.yaml
 ```
+
+## 🚀 CI/CD & Application Rollback Workflow (Automated)
+
+After infrastructure deployment, take a notes of **Terraform outputs** to configure env in workflows.
+
+### ⚙️ GitHub Actions – Configuration
+
+* The following environment variables needs to be configured in both relative ci-cd workflow & rollback workflow to make automated deployment.
+* Make sure to add updated role from aws account to perform automated deployment with setting up [OIDC for github actions.](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws?versionId=free-pro-team%40latest&productId=apps)
+* The pipeline iam role should be mapped to the EKS cluster authentication layer.
+```
+env:
+  AWS_REGION: ap-south-1
+  ECR_REGISTRY: 935456168005.dkr.ecr.ap-south-1.amazonaws.com
+  ECR_BACKEND_REPO: assignment-backend
+  ECR_FRONTEND_REPO: assignment-frontend
+  EKS_CLUSTER_NAME: assignment-cluster
+  VITE_API_URL: http://assignment-api.jay.cloud-ip
+  IMAGE_TAG: ${{ github.sha }}
+```
+```
+  - name: Configure AWS credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: arn:aws:iam::935456168005:role/GitHubAction-AssumeRoleWithAction
+      aws-region: ${{ env.AWS_REGION }}
+```
+
+### CI-CD Pipeline (Automated)
+
+* Once the all env & workflow configuration is done click on the below links to trigger the workflows.
+* Manual trigger (workflow dispatch)
+* [CI-CD Pipeline workflow](https://github.com/HARNESHA/Genea-Assignment/actions/workflows/pipeline.yaml) 
+
+### 🧪 CI Phase – Image Lifecycle
+
+During CI execution:
+
+* Backend and frontend Docker images are built
+* Images are versioned using:
+
+  * Git commit SHA
+  * `latest` tag
+* Images are pushed to **Amazon ECR**
+
+### ☸️ CD Phase – Application Deployment
+
+After image build:
+
+* Kubernetes deployments are updated automatically
+* Rolling updates are triggered in EKS
+* Previous versions are retained as revisions
+
+
+### ♻️ Rollback Workflow (Controlled & Safe)
+
+* To deploy the application to specific version [**Rollback**](https://github.com/HARNESHA/Genea-Assignment/actions/workflows/rollback.yaml) workflow can be trigger mannual mode.
+* Select the requried input to rollback deployment to specific version.
+
+| Input       | Description                  |
+| ----------- | ---------------------------- |
+| `component` | backend / frontend / all     |
+| `revision`  | Optional Kubernetes revision |
+
+### 🔁 Supported Rollback Scenarios
+
+#### 🔹 Rollback to Previous Version
+
+* Automatically reverts the selected component
+* No revision input required
+
+#### 🔹 Rollback to Specific Version
+
+* Reverts to a known stable Kubernetes revision
+* Used for controlled recovery
+* Backend and frontend rolled back together
+* Ensures compatibility between services
+
+### Configure ALB Ingress
+
+Create an [Ingress resource](https://docs.aws.amazon.com/eks/latest/userguide/lbc-helm.html) configured for AWS ALB:
+
+#### Access the Application
+
+Once the Ingress is applied:
+
+* AWS automatically provisions an **Application Load Balancer**
+* ALB DNS name becomes available
+* Custom domain (optional) can be mapped via Route53
+<img width="1487" height="493" alt="image" src="https://github.com/user-attachments/assets/9f235506-3ec5-49a5-9cc4-a04bf840aed0" />
+
+### Database Migrations
+
+* A migration represents a controlled change to the database schema (for example: adding a column, changing a datatype, or removing a table).
+* To demonstrate the migration process, **two visible schema changes** were implemented and applied to the database.
+
+#### Schema Change 1 – User Table
+
+A new optional field `phone_number` was added to the `user` table.
+
+**Model change (`app/models.py`):**
+
+```python
+class UserBase(SQLModel):
+    email: EmailStr = Field(unique=True, index=True, max_length=255)
+    is_active: bool = True
+    is_superuser: bool = False
+    full_name: str | None = Field(default=None, max_length=255)
+    phone_number: str | None = Field(default=None, max_length=20)
+```
+
+**Database effect:**
+
+```
+ALTER TABLE user ADD COLUMN phone_number VARCHAR(20);
+```
+
+#### Schema Change 2 – Item Table
+
+A new optional field `price` was added to the `item` table.
+
+**Model change (`app/models.py`):**
+
+```python
+class ItemBase(SQLModel):
+    title: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=255)
+    price: float | None = Field(default=None, ge=0)
+```
+
+**Database effect:**
+
+```
+ALTER TABLE item ADD COLUMN price FLOAT;
+```
+
+### Generating a Migration
+
+After updating the models, a migration file is auto-generated using Alembic:
+
+```bash
+alembic revision --autogenerate -m "add phone_number to user and price to item"
+```
+
+This creates a versioned migration file under:
+
+```
+alembic/versions/
+```
+
+The file contains both:
+
+* `upgrade()` – applies schema changes
+* `downgrade()` – reverts schema changes
+
+### Applying the Migration
+
+To apply the migration to the database:
+
+```bash
+alembic upgrade head
+```
+
+After applying, the new columns are visible in the database.
+<img width="1397" height="818" alt="Screenshot 2026-01-02 020325" src="https://github.com/user-attachments/assets/a2b4217d-d18c-4e58-a775-0c45de4cdedb" />
+<img width="903" height="737" alt="image" src="https://github.com/user-attachments/assets/cf2307ad-2c24-4150-a439-5b95e4124139" />
+
+### Rolling Back a Migration
+
+To rollback the last schema change:
+
+```bash
+alembic downgrade -1
+```
+
+This safely removes the newly added columns, proving rollback capability.
+
+Here’s a **short, clean summary table** you can paste directly into your README.
+
+---
+
+### ✅ Requirements Summary
+
+| # | Requirement                | Implementation                                 | Status |
+| - | -------------------------- | ---------------------------------------------- | ------ |
+| 1 | Host a microservice on AWS | FastAPI microservice deployed on AWS (EKS)     | ✅      |
+| 2 | Provision with IaC         | Infrastructure provisioned using Terraform     | ✅      |
+| 3 | CI/CD pipeline             | GitHub Actions for build, validate, and deploy | ✅      |
+| 4 | Managed database           | Amazon RDS (PostgreSQL) connected to backend   | ✅      |
+| 5 | Database migrations        | Alembic migrations with two schema changes     | ✅      |
+| 6 | Deploy, rollback, operate  | Documented deployment, rollback, and ops steps | ✅      |
+
 
