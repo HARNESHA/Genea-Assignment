@@ -1,161 +1,136 @@
-# Full-Stack FastAPI and React Template - DevOps November CV Challenge
+# Full-Stack FastAPI + React (Vite) Template
 
-Welcome to the **Full-Stack FastAPI and React Template** repository! This project serves as a demo application for the **DevOps November Resume Challenge**, where participants will deploy a full-stack application with a **FastAPI** backend and **ReactJS** frontend using **ChakraUI**. Additionally, participants will set up monitoring and logging tools, configure a reverse proxy, and deploy the application to a cloud platform, showcasing their end-to-end DevOps skills.
+This repository contains a **full-stack web application template** built with:
 
----
+* **Backend**: FastAPI (Python), SQLAlchemy/SQLModel, Alembic migrations
+* **Frontend**: React + TypeScript (Vite)
+* **Containerization**: Docker & Docker Compose
+* **Reverse Proxy**: Nginx (frontend)
 
-## Challenge Overview
-
-As part of this challenge, your primary goal is to:
-
-1. Dockerize a full-stack application with a FastAPI backend and React frontend.
-2. Configure and deploy monitoring and logging tools including Prometheus, Grafana, Loki, Promtail, and cAdvisor.
-3. Set up a reverse proxy for application routing.
-4. Deploy the application to a cloud platform with proper domain configuration.
-5. Submit a working repository with detailed documentation and screenshots of your deployed application.
+The setup is designed to be **developer-friendly**, **production-ready**, and easy to run locally using Docker.
 
 ---
 
-## Challenge Requirements
+## 📁 Project Structure
 
-1. **Dockerization and Orchestration**:  
-   - Write `Dockerfile`s to containerize both the **React frontend** and **FastAPI backend**.
-   - Create two `docker-compose.yml` files:
-     1. **Application Stack Compose**:  
-        Orchestrate the following services:
-        - React frontend.
-        - FastAPI backend.
-        - PostgreSQL database.
-        - Adminer (for database management).
-        - Reverse Proxy (Traefik or Nginx Proxy Manager).
-     2. **Monitoring Stack Compose**:  
-        Orchestrate the following services:
-        - Prometheus.
-        - Grafana.
-        - Loki and Promtail.
-        - **cAdvisor** for monitoring container performance.
-     - Ensure both Docker Compose files are connected to a common Docker network to allow inter-container communication.
-
-2. **Reverse Proxy Configuration**:  
-   Use **Traefik** or **Nginx Proxy Manager** in the **Application Stack Compose** to:
-   - Serve the **frontend** on `/` (the root path).
-   - Proxy `/api` to the FastAPI backend.
-   - Proxy `/docs` to the FastAPI backend's Swagger documentation.
-   - Proxy `/prometheus` to the Prometheus web UI (via the Monitoring Stack).
-   - Proxy `/grafana` to the Grafana web UI (via the Monitoring Stack).
-   - Ensure all routes are properly secured and accessible.
-
-3. **Database Configuration**:  
-   - Use PostgreSQL as the backend database.
-   - Configure Adminer for database management and ensure it is accessible via `db.domain`.
-
-4. **Monitoring and Logging**:  
-   - Set up the following tools using the **Monitoring Stack Compose**:
-     - **Prometheus** for collecting application metrics.
-     - **Grafana** for visualizing metrics and logs.
-     - **Loki** and **Promtail** for log aggregation and forwarding.
-     - **cAdvisor** to monitor container metrics and performance.
-   - Ensure Prometheus is scraping metrics from the backend, and Grafana is configured with dashboards for logs and metrics.
-   - Ensure that all monitoring dashboards (Prometheus, Grafana, and cAdvisor) are routed through the reverse proxy (Traefik or Nginx Proxy Manager) in the **Application Stack Compose**.
-   - Create a cAdvisor Dashboard in Grafana**:
-     - Integrate **cAdvisor** with **Grafana** to display container performance metrics such as CPU usage, memory usage, disk I/O, and network I/O.
-     - Create a custom Grafana dashboard that visualizes container metrics from cAdvisor.
-     - Ensure the dashboard has proper panels for the most important container metrics.
-
-   - Add Loki as a Data Source in Grafana**:
-     - Integrate **Loki** into **Grafana** to enable log aggregation and visualization.
-     - Ensure that **Loki** is set up as a data source in **Grafana** and logs from the application and containers are sent to it.
-     - Include a panel in Grafana that visualizes logs from Loki, which could be useful for troubleshooting or monitoring application performance.
-
-5. **Cloud Deployment**:  
-   - Deploy the application stack to a cloud platform (AWS, GCP, or Azure) using Docker Compose.
-   - Set up a domain for your application (e.g., `your-app.domain.com`).
-   - If you don’t have a domain, obtain a free subdomain from [Afraid DNS](https://freedns.afraid.org/).
-   - Configure:
-     - HTTP to redirect to HTTPS.
-     - `www` to redirect to the non-`www` domain.
-
-6. **Article**:  
-   - Write and publish a detailed **Article** about the project. Your article should include:
-     - An overview of the project and its purpose.
-     - Step-by-step instructions on how you containerized, orchestrated, and deployed the application.
-     - Screenshots of your setup, including:
-       - The deployed application.
-       - Grafana dashboards showing metrics and logs.
-       - Reverse proxy configuration.
-     - Challenges you faced and how you resolved them.
-     - Lessons learned and tips for others.
-   - Include the link to your Medium article in your submission.
----
-## Project Structure
-
-The repository is organized as follows:
-
-- **frontend**: Contains the ReactJS application.
-- **backend**: Contains the FastAPI application and PostgreSQL database integration.
-
-Each directory includes its own README file with detailed instructions:
-
-- [Frontend README](./frontend/README.md)
-- [Backend README](./backend/README.md)
-
----
-
-## Getting Started
-
-### Clone the Repository
-
-Start by cloning this repository to your local machine:
-
-```bash
-git clone <repository-url>
-cd <repository-folder>
+```text
+application/
+├── backend
+│   ├── Dockerfile              # Backend Docker image definition
+│   ├── README.md               # Backend-specific documentation
+│   ├── alembic.ini             # Alembic migration configuration
+│   ├── app/                    # FastAPI application source code
+│   ├── example.env             # Example environment variables for backend
+│   ├── poetry.lock             # Locked Python dependencies
+│   ├── prestart.sh             # Pre-start script (migrations, checks, etc.)
+│   └── pyproject.toml          # Python project & dependency configuration
+│
+├── frontend
+│   ├── Dockerfile              # Frontend Docker image definition
+│   ├── README.md               # Frontend-specific documentation
+│   ├── biome.json              # Linting/formatting configuration
+│   ├── example.env             # Example environment variables for frontend
+│   ├── index.html              # HTML entry point
+│   ├── modify-openapi-operationids.js # OpenAPI helper script
+│   ├── nginx.conf              # Nginx configuration for serving frontend
+│   ├── package.json            # Node.js dependencies
+│   ├── package-lock.json       # Locked Node.js dependencies
+│   ├── public/                 # Static assets
+│   ├── src/                    # React source code
+│   ├── tsconfig.json           # TypeScript configuration
+│   ├── tsconfig.node.json      # Node-specific TS config
+│   └── vite.config.ts          # Vite build configuration
+│
+└── docker-compose.yml          # Orchestrates backend & frontend services
 ```
 
+---
 
-## Testing and Evaluation
+## ⚙️ Prerequisites
 
-Your hosted application will be evaluated based on the following criteria:  
+Make sure the following are installed on your local machine:
 
-1. **Dockerization**:  
-   - Verify that the `Dockerfile`s and `docker-compose.yml` work seamlessly to build and run the application.  
+* **Docker** (v20+)
+* **Docker Compose** (v2+)
+* **Git**
 
-2. **Reverse Proxy**:  
-   - Confirm that the application routes are correctly configured (frontend on `/`, backend `/api`, and backend docs `/docs`).  
-
-3. **Database Setup**:  
-   - Ensure PostgreSQL is properly configured and Adminer is accessible via `db.domain`.  
-
-4. **Monitoring and Logging**:  
-   - Test that Prometheus scrapes application metrics and Grafana displays metrics and logs.
-   - Ensure that cAdvisor metrics are displayed properly in the Grafana dashboard.
-   - Ensure that Logs from Loki Can be visualized in Grafana.
-
-5. **Cloud Deployment**:  
-   - Confirm the application is deployed to the cloud and accessible via a public URL.  
-   - Check that HTTP redirects to HTTPS, and `www` redirects to the non-`www` domain.  
-
-6. **Repository Validation**:  
-   - Verify that running `docker-compose up -d` from your repository correctly deploys the application and all supporting services.  
-
-7. **Article**:  
-   - Evaluate the clarity, detail, and technical depth of the published article.  
-
+> No need to install Python or Node.js locally if you are using Docker.
 
 ---
 
-## Submission Guidelines
+## 🔐 Environment Configuration (IMPORTANT)
 
-1. Deploy the application stack and ensure all services are running correctly.  
-2. Submit the following:  
-   - A link to your **GitHub repository** containing all files (`Dockerfile`, `docker-compose.yml`, configurations, etc.).  
-   - A link to your **Article**.  
-   - Screenshots of:  
-     - The deployed application.  
-     - Metrics and logs displayed in Grafana.  
-     - Reverse proxy routes and configurations.  
+This project uses **separate environment files** for backend and frontend.
+
+### 1️⃣ Backend Environment Variables
+
+```bash
+cd backend
+cp example.env .env
+```
+
+Edit `backend/.env` and configure values such as:
+
+```env
+DATABASE_URL=postgresql://user:password@db:5432/appdb
+SECRET_KEY=your-secret-key
+ENV=local
+```
 
 ---
 
+### 2️⃣ Frontend Environment Variables
 
-Good luck with this Challenge! This is your opportunity to showcase your end-to-end DevOps skills and stand out to potential employers.
+```bash
+cd frontend
+cp example.env .env
+```
+
+Edit `frontend/.env` and configure:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+⚠️ **Both `.env` files must be updated before running the application.**
+
+---
+
+## ▶️ Running the Application Locally
+
+From the **root directory** (`application/`):
+
+```bash
+docker-compose up --build
+```
+
+This will:
+
+* Build backend and frontend Docker images
+* Start all required services
+* Apply backend startup scripts (migrations, checks)
+
+---
+
+## 🌐 Access the Application
+
+| Service            | URL                                                        |
+| ------------------ | ---------------------------------------------------------- |
+| Frontend           | [http://localhost:3000](http://localhost:3000)             |
+| Backend API        | [http://localhost:8000](http://localhost:8000)             |
+| API Docs (Swagger) | [http://localhost:8000/docs](http://localhost:8000/docs)   |
+| API Docs (ReDoc)   | [http://localhost:8000/redoc](http://localhost:8000/redoc) |
+
+---
+
+## 🔄 Stopping the Application
+
+```bash
+docker-compose down
+```
+
+To remove volumes as well:
+
+```bash
+docker-compose down -v
+```
