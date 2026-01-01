@@ -21,8 +21,8 @@ env:
 
 jobs:
 
-  ci-cd:
-    name: ci-cd-pipeline
+  ci:
+    name: ci-jobs
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -65,6 +65,22 @@ jobs:
             ${{ steps.ecr.outputs.registry }}/$ECR_FRONTEND_REPO:latest
           docker push ${{ steps.ecr.outputs.registry }}/$ECR_FRONTEND_REPO:${IMAGE_TAG}
           docker push ${{ steps.ecr.outputs.registry }}/$ECR_FRONTEND_REPO:latest
+  cd:
+    name: cd-jobs
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::935456168005:role/GitHubAction-AssumeRoleWithAction
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup EKS Kubeconfig
         run: |
