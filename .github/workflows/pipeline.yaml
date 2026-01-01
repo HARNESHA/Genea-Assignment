@@ -67,7 +67,7 @@ jobs:
           docker push ${{ steps.ecr.outputs.registry }}/$ECR_FRONTEND_REPO:latest
   cd:
     name: cd-jobs
-    needs: ci-jobs
+    needs: ci
     runs-on: ubuntu-latest
     permissions:
       id-token: write
