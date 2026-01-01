@@ -1,0 +1,78 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: "Component to rollback (backend | frontend | all)"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - backend
+          - frontend
+          - all
+      revision:
+        description: "Kubernetes revision (optional)"
+        required: false
+env:
+  AWS_REGION: ap-south-1
+  EKS_CLUSTER_NAME: assignment-cluster
+  ECR_BACKEND_REPO: assignment-backend
+  ECR_FRONTEND_REPO: assignment-frontend
+
+jobs:
+  rollback:
+    name: Rollback
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::935456168005:role/GitHubAction-AssumeRoleWithAction
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup EKS Kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name $EKS_CLUSTER_NAME \
+            --region $AWS_REGION
+          kubectl cluster-info
+
+      # ================= BACKEND ROLLBACK =================
+      - name: Rollback Backend
+        if: ${{ github.event.inputs.component == 'backend' || github.event.inputs.component == 'all' }}
+        run: |
+          if [ -z "${{ github.event.inputs.revision }}" ]; then
+            echo "Rolling back backend to previous revision"
+            kubectl rollout undo deployment/fast-api-backend
+          else
+            echo "Rolling back backend to revision ${{ github.event.inputs.revision }}"
+            kubectl rollout undo deployment/fast-api-backend \
+              --to-revision=${{ github.event.inputs.revision }}
+          fi
+
+      # ================= FRONTEND ROLLBACK =================
+      - name: Rollback Frontend
+        if: ${{ github.event.inputs.component == 'frontend' || github.event.inputs.component == 'all' }}
+        run: |
+          if [ -z "${{ github.event.inputs.revision }}" ]; then
+            echo "Rolling back frontend to previous revision"
+            kubectl rollout undo deployment/fast-api-frontend
+          else
+            echo "Rolling back frontend to revision ${{ github.event.inputs.revision }}"
+            kubectl rollout undo deployment/fast-api-frontend \
+              --to-revision=${{ github.event.inputs.revision }}
+          fi
+
+      - name: Verify Rollout History
+        run: |
+          kubectl rollout history deployment/fast-api-backend
+          kubectl rollout history deployment/fast-api-frontend
