@@ -6,8 +6,6 @@ This repository provisions **AWS infrastructure using Terraform** with a **remot
 
 The project follows a **multi-environment IaC layout**, with **`dev`** as the active environment.
 
----
-
 ## 🗺️ Application Architecture Diagram
 
 <img width="1459" height="696" alt="image" src="https://github.com/user-attachments/assets/7a6ccffb-314b-4e2d-9143-d72d1a095066" />
@@ -18,8 +16,6 @@ The project follows a **multi-environment IaC layout**, with **`dev`** as the ac
 > * Amazon **RDS** for managed database services
 > * Modular Terraform design for reusability
 > * Remote backend for state locking & versioning
-
----
 
 ## ✅ Prerequisites
 
@@ -40,8 +36,6 @@ Your AWS identity (IAM user or assumed role) must be able to:
 * Read/write Terraform state objects
 
 <img width="848" height="155" alt="image" src="https://github.com/user-attachments/assets/7c58ddb9-5e8d-4660-9927-b0673e1d125d" />
-
----
 
 ## 📁 Directory Structure (Relevant)
 
@@ -76,8 +70,6 @@ Iac/
 > * `env/dev/` → Environment-specific orchestration
 > * `vars/` → Environment-specific values (kept separate for safety)
 
----
-
 ## 🪣 Step 1: Create S3 Backend Bucket (One-Time Setup)
 
 Terraform state is stored remotely in **Amazon S3** to support:
@@ -102,8 +94,6 @@ aws s3api put-bucket-versioning \
   --bucket tfstate-dev-<unique-name> \
   --versioning-configuration Status=Enabled
 ```
----
-
 ## ⚙️ Step 2: Configure Terraform Backend
 
 Update the backend configuration file:
@@ -116,8 +106,6 @@ key     = "eks/dev/terraform.tfstate"
 region  = "ap-south-1"
 encrypt = true
 ```
----
-
 ## 🔍 Step 3: Initialize & Validate Terraform
 
 Run the following commands from `env/dev`:
@@ -136,8 +124,6 @@ This will:
 
 <img width="1695" height="962" alt="image" src="https://github.com/user-attachments/assets/74934c5a-cd4b-4173-80a9-210a9715a811" />
 
----
-
 ## 🧪 Step 4: Plan & Apply Infrastructure
 
 ### Generate Execution Plan
@@ -149,8 +135,6 @@ terraform plan \
 ```
 
 <img width="480" height="471" alt="image" src="https://github.com/user-attachments/assets/1e09a766-5013-44c5-88f6-9652af509f88" />
-
----
 
 ### 🚀 Apply Infrastructure
 
@@ -174,8 +158,6 @@ Terraform will:
 > * CI/CD pipelines
 > * Application deployment
 
----
-
 ## ☸️ Step 5: Access EKS & Deploy Application
 
 Update kubeconfig:
@@ -186,13 +168,14 @@ aws eks update-kubeconfig \
   --region ap-south-1
 ```
 
-Verify cluster access:
+Verify cluster access & deploy the application fron K8s folder manifest
 
 ```bash
 kubectl cluster-info
+kubectl apply -f frontend-deployment.yaml
+kubectl apply -f backend-deployment.yaml
 ```
-
----
+<img width="1848" height="300" alt="image" src="https://github.com/user-attachments/assets/85ca55eb-0834-49f5-9eeb-4f4a848887ad" />
 
 ## ♻️ Rollback, Updates & Cleanup
 
@@ -208,3 +191,4 @@ kubectl cluster-info
 terraform destroy \
   -var-file=../../vars/dev.terraform.tfvars
 ```
+
