@@ -182,7 +182,7 @@ Terraform will:
 > * CI/CD pipelines
 > * Application deployment
 
-## ☸️ Step 5: Access EKS
+## ☸️ Step 5: Access EKS & Create a Backed env Secrets
 
 Update kubeconfig:
 
@@ -193,6 +193,33 @@ aws eks update-kubeconfig \
 kubectl cluster-info
 ```
 <img width="1848" height="130" alt="image" src="https://github.com/user-attachments/assets/624147b5-bc63-41ff-a3c6-59779325a842" />
+
+```bash
+kubectl create secret generic backend-secret \
+    --from-literal=DOMAIN=localhost \
+    --from-literal=ENVIRONMENT=local \
+    --from-literal=PROJECT_NAME="Full Stack FastAPI Project" \
+    --from-literal=STACK_NAME=full-stack-fastapi-project \
+    --from-literal=BACKEND_CORS_ORIGINS="http://localhost,http://localhost:5173,http://assignment.jay.cloud-ip" \
+    --from-literal=SECRET_KEY=harnesha2244 \
+    --from-literal=FIRST_SUPERUSER=harnesha22@gmail.com \
+    --from-literal=FIRST_SUPERUSER_PASSWORD=harnesha22 \
+    --from-literal=USERS_OPEN_REGISTRATION=True \
+    --from-literal=SMTP_HOST= \
+    --from-literal=SMTP_USER= \
+    --from-literal=SMTP_PASSWORD= \
+    --from-literal=EMAILS_FROM_EMAIL=info@example.com \
+    --from-literal=SMTP_TLS=True \
+    --from-literal=SMTP_SSL=False \
+    --from-literal=SMTP_PORT=587 \
+    --from-literal=POSTGRES_SERVER=database-1.xxx.ap-south-1.rds.amazonaws.com \
+    --from-literal=POSTGRES_PORT=5432 \
+    --from-literal=POSTGRES_DB=assignmentdevdb \
+    --from-literal=POSTGRES_USER=postgres \
+    --from-literal=POSTGRES_PASSWORD= \
+ --dry-run=client -o yaml > secret.yaml
+ kubectl apply -f secret.yaml
+```
 
 ## 🚀 CI/CD & Application Rollback Workflow (Automated)
 
@@ -297,3 +324,4 @@ Once the Ingress is applied:
 | Security           | IAM + OIDC                  |
 
 ---
+
