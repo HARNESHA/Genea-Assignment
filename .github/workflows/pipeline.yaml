@@ -73,7 +73,19 @@ jobs:
             --region $AWS_REGION
           kubectl cluster-info
 
-      - name: Deploy to EKS
+      - name: Deploy Backend
         run: |
-          kubectl rollout restart deployment backend
-          kubectl rollout restart deployment frontend
+          kubectl set image deployment/fast-api-backend \
+            backend=${{ env.ECR_BACKEND_REPO }}:${{ github.sha }}
+          kubectl rollout status deployment/fast-api-backend --timeout=30s
+
+      - name: Deploy Frontend
+        run: |
+          kubectl set image deployment/fast-api-frontend \
+            frontend=${{ env.ECR_FRONTEND_REPO }}:${{ github.sha }}
+          kubectl rollout status deployment/fast-api-frontend --timeout=30s
+
+      - name: Verify Deployment
+        run: | 
+          kubectl rollout history deployment/fast-api-backend
+          kubectl rollout history deployment/fast-api-frontend
