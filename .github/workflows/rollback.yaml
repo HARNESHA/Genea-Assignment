@@ -11,8 +11,6 @@ on:
         description: "Kubernetes revision number (optional)"
         required: false
   push:
-    branches:
-    - dev
 
 env:
   AWS_REGION: ap-south-1
@@ -21,6 +19,9 @@ env:
 jobs:
   rollback:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout Repo
