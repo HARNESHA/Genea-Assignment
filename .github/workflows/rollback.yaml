@@ -10,6 +10,9 @@ on:
       revision:
         description: "Kubernetes revision number (optional)"
         required: false
+  push:
+    branches:
+    - dev
 
 env:
   AWS_REGION: ap-south-1
