@@ -397,3 +397,19 @@ alembic downgrade -1
 
 This safely removes the newly added columns, proving rollback capability.
 
+Here’s a **short, clean summary table** you can paste directly into your README.
+
+---
+
+### ✅ Requirements Summary
+
+| # | Requirement                | Implementation                                 | Status |
+| - | -------------------------- | ---------------------------------------------- | ------ |
+| 1 | Host a microservice on AWS | FastAPI microservice deployed on AWS (EKS)     | ✅      |
+| 2 | Provision with IaC         | Infrastructure provisioned using Terraform     | ✅      |
+| 3 | CI/CD pipeline             | GitHub Actions for build, validate, and deploy | ✅      |
+| 4 | Managed database           | Amazon RDS (PostgreSQL) connected to backend   | ✅      |
+| 5 | Database migrations        | Alembic migrations with two schema changes     | ✅      |
+| 6 | Deploy, rollback, operate  | Documented deployment, rollback, and ops steps | ✅      |
+
+
