@@ -10,6 +10,7 @@ on:
 
 env:
   AWS_REGION: ap-south-1
+  ECR_REGISTRY: 935456168005.dkr.ecr.ap-south-1.amazonaws.com
   ECR_BACKEND_REPO: assignment-backend
   ECR_FRONTEND_REPO: assignment-frontend
   EKS_CLUSTER_NAME: assignment-cluster
@@ -90,13 +91,13 @@ jobs:
       - name: Deploy Backend
         run: |
           kubectl set image deployment/fast-api-backend \
-            fast-api-backend=${{ env.ECR_BACKEND_REPO }}:${{ env.IMAGE_TAG }} \
+            fast-api-backend=${{ steps.ecr.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:${{ env.IMAGE_TAG }} \
             --record
 
       - name: Deploy Frontend
         run: |
           kubectl set image deployment/fast-api-frontend \
-            fast-api-frontend=${{ env.ECR_FRONTEND_REPO }}:${{ env.IMAGE_TAG }} \
+            fast-api-frontend=${{ steps.ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:${{ env.IMAGE_TAG }} \
             --record
 
       - name: Verify Deployment

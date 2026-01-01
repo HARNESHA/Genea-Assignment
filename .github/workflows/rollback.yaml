@@ -18,6 +18,8 @@ on:
 env:
   AWS_REGION: ap-south-1
   EKS_CLUSTER_NAME: assignment-cluster
+  ECR_BACKEND_REPO: assignment-backend
+  ECR_FRONTEND_REPO: assignment-frontend
 
 jobs:
   rollback:
@@ -56,8 +58,6 @@ jobs:
               --to-revision=${{ github.event.inputs.revision }}
           fi
 
-          kubectl rollout status deployment/fast-api-backend --timeout=30s
-
       # ================= FRONTEND ROLLBACK =================
       - name: Rollback Frontend
         if: ${{ github.event.inputs.component == 'frontend' || github.event.inputs.component == 'all' }}
@@ -70,8 +70,6 @@ jobs:
             kubectl rollout undo deployment/fast-api-frontend \
               --to-revision=${{ github.event.inputs.revision }}
           fi
-
-          kubectl rollout status deployment/fast-api-frontend --timeout=30s
 
       - name: Verify Rollout History
         run: |
